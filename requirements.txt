@@ -1,0 +1,18 @@
+# Core runtime dependencies for Yakushahyoubanki NEL (Python >=3.10).
+# Enough to run the EEA and the LLM disambiguators (mad/maps/reflexion/cove/
+# selfcon/zscot/plansolve/rerank) with the default `gather` candidate method,
+# and to build/scrape the dataset. (.env is parsed by config.py itself, so no
+# python-dotenv is needed.)
+openai>=1.0
+requests>=2.28
+beautifulsoup4>=4.11
+tqdm>=4.64
+
+# Optional — dense candidate retrieval (--method dense / union_dense):
+#   numpy>=1.23
+#   sentence-transformers>=2.2
+#
+# Optional — trained / generative baselines (blink / mgenre / refined / dyvo /
+# t5ja). These also require their upstream repositories and a GPU:
+#   torch
+#   transformers

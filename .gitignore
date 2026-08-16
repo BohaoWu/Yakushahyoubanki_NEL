@@ -216,3 +216,40 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# ---- project-specific (Yakushahyoubanki NEL) ----
+# large data / experiment artifacts — never commit
+experiment/
+data/
+log/
+src_backup_*/
+demo/
+
+# LaTeX build artifacts (paper/)
+*.aux
+*.bbl
+*.blg
+*.fls
+*.fdb_latexmk
+*.xdv
+*.out
+*.synctex.gz
+paper/*.pdf
+paper/comment.cut
+
+# local scratch
+*.tmp
+
+# --- minimal open-source release: publish only src/ + essential meta ---
+# Everything below is kept locally but excluded from the published repo.
+.claude/
+backup/
+integration/
+setup.sh
+pic/
+paper/
+docs/
+# developer-experience extras (add back if you want a contributor-facing repo)
+CONTRIBUTING.md
+.editorconfig
+.pre-commit-config.yaml
