@@ -92,7 +92,6 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from el_mode import GENERIC_META, era_hint_line, infer_era, sample_context
-from llm_cache import wrap_client
 from llm_debate_disambiguator import (  # noqa: E402
     GENERIC_META,
     _ask,
@@ -196,12 +195,9 @@ def main_bare():
     if args.limit:
         test = test[: args.limit]
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    ck = {}
-    if os.environ.get("OPENAI_API_KEY"):
-        ck["api_key"] = os.environ["OPENAI_API_KEY"]
-    client = wrap_client(OpenAI(**ck))
+    client = make_client()
 
     print(f"[bare] model={args.model} samples={len(test)} generic={db.generic}")
     t0 = time.time()
@@ -334,17 +330,9 @@ def main_zscot():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)
@@ -542,17 +530,9 @@ def main_plansolve():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)

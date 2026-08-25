@@ -259,14 +259,9 @@ def main():
     args = ap.parse_args()
     judge_model = args.judge_model or args.model
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    ck = {}
-    if args.base_url:
-        ck["base_url"] = args.base_url
-    if args.api_key:
-        ck["api_key"] = args.api_key
-    client = OpenAI(**ck)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)

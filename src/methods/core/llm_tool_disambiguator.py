@@ -459,44 +459,7 @@ FAIR_TOOL_NAMES = {"search_entities", "get_entity", "find_family"}
 # Agent loop
 # -----------------------------------------------------------------------------
 
-SYSTEM_PROMPT = """你是日本歌舞伎評判記的實體鏈接專家。給定一個 mention、它的年份和上下文，找出對應的 entity_id。
-
-歌舞伎難點：
-- 同一個名字（如「松本幸四郎」）歷代多人使用，要靠 year 區分代目
-- 演員一生改名多次（kaimeihyou 記錄每段時期的名字）
-- mention 可能是簡稱（「松本」「幸四郎」）或俳名（「素朝」「飛雀」）
-
-工作流程：
-1. 用 search_entities 或 find_by_alias_year 找候選
-2. 用 year_active / kaimeihyou_at_year 確認候選在指定 year 是否活著、是否用該名字
-3. 必要時 get_entity 看 description 看師承/屋號/演出
-4. 推理要基於工具返回的事實，不要猜
-
-當所有信息收集完畢，最終以 JSON 對象格式輸出（不需要 markdown code block）:
-{"reasoning": "你的簡短推理過程", "entity_id": INTEGER}
-
-**絕對禁止輸出 "無法確定" 或 "找不到"**。如果工具返回有任何候選 (search_entities/find_family/find_by_alias_year 之一)，
-**必須從中選出最可能的一個並輸出其 entity_id**，即使不完全確定。歌舞伎 mention 99% 都能找到至少一個合理候選。
-
-選擇優先級：
-1. find_by_alias_year 命中的 entity (年份匹配)
-2. find_family 中的家系成員 (按 year 估代目)
-3. search_entities 返回的第一個 (字面匹配最近)
-4. 上下文裡共演 actor 提示的同家系成員
-
-如果工具完全沒有候選，從 search_entities 重試（用 mention 的不同片段，如去掉姓只用名）。
-"""
-
-# EL_PROMPT_EN=1 swaps the daime prompts below for their English renderings. Off by
-# default: the daime numbers on record were produced with the Chinese prompts, and the
-# llm_cache key hashes the message text, so flipping this misses the cache entirely.
-_PROMPT_EN = os.environ.get("EL_PROMPT_EN") == "1"
-
-# A line-for-line English rendering of SYSTEM_PROMPT above. Same sections, same
-# order, same claims — it exists so "which language is the prompt in" can be
-# measured as a single variable (EL_PROMPT_EN=1), not confounded with a rewrite.
-# Do not improve one version without the other.
-SYSTEM_PROMPT_EN = """You are an expert on entity linking for Japanese kabuki hyoubanki (actor
+SYSTEM_PROMPT = """You are an expert on entity linking for Japanese kabuki hyoubanki (actor
 critique books). Given a mention, its year and its context, find the matching entity_id.
 
 What makes kabuki hard:
@@ -650,7 +613,7 @@ def disambiguate_one(sample, db, client, model, max_steps=8, fair=False) -> dict
             "role": "system",
             "content": GENERIC_SYSTEM_PROMPT
             if getattr(db, "generic", False)
-            else (SYSTEM_PROMPT_EN if _PROMPT_EN else SYSTEM_PROMPT),
+            else SYSTEM_PROMPT,
         },
         {"role": "user", "content": format_sample(sample, db)},
     ]
@@ -734,11 +697,7 @@ def disambiguate_one(sample, db, client, model, max_steps=8, fair=False) -> dict
                         "role": "user",
                         "content": (
                             f"Tool `{name}` returned:\n{json.dumps(result, ensure_ascii=False)}\n\n"
-                            + (
-                                "Continue reasoning, or give your final answer (strict JSON)."
-                                if _PROMPT_EN
-                                else "請繼續推理或給出最終答案（嚴格 JSON 格式）。"
-                            )
+                            + "Continue reasoning, or give your final answer (strict JSON)."
                         ),
                     }
                 )
@@ -797,19 +756,9 @@ def main():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    elif args.base_url:  # local server usually needs a dummy key
-        client_kwargs["api_key"] = os.environ.get("OPENAI_API_KEY", "EMPTY")
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities or ENTS_PATH)]
     db = EntityDB(ents)

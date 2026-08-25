@@ -266,22 +266,10 @@ Re-examine your decision. If the objection holds, switch to the candidate that b
 Output strictly as JSON, no markdown: {{"reasoning": "brief reasoning", "confidence": 0.0-1.0, "entity_id": INTEGER}}"""
 
 
-def _ask(client, model, messages, max_retries=6):
-    """Single chat completion with exponential backoff on transient errors."""
-    delay = 2.0
-    for attempt in range(max_retries):
-        try:
-            resp = client.chat.completions.create(
-                model=model,
-                messages=messages,
-                temperature=0,
-            )
-            return resp.choices[0].message.content or ""
-        except Exception:
-            if attempt == max_retries - 1:
-                raise
-            time.sleep(delay)
-            delay = min(delay * 2, 30)
+# The chat-with-retries helper now lives in llm_client; re-exported as _ask so the
+# reasoning methods (cot_family / sampling / maps_rerank / reflexion) keep importing it
+# from here unchanged.
+from llm_client import ask as _ask  # noqa: E402
 
 
 def parse_json(text):
@@ -566,17 +554,9 @@ def main():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)

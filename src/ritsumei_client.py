@@ -18,8 +18,10 @@ import time
 import requests
 from bs4 import BeautifulSoup
 
+import config
+
 __version__ = "1.0.0"
-__author__ = "BLINK Japanese NEL Team"
+__author__ = "Japanese NEL Team"
 
 # ============================================================================
 # Configuration constants
@@ -29,6 +31,10 @@ __author__ = "BLINK Japanese NEL Team"
 BASE_URL = "https://www.dh-jac.net/db/shumei"
 SEARCH_ENDPOINT = f"{BASE_URL}/results.php"
 DETAIL_ENDPOINT = f"{BASE_URL}/results-big.php"
+
+# Default local cache location. config.PROJ_DATA is <project>/data (overridable via
+# YAKUSYA_DATA_ROOT), so the ARC-DB search cache is found without callers passing a path.
+DEFAULT_CACHE_FILE = os.path.join(config.PROJ_DATA, "dataset_ja", "ritsumei_pd_cache.json")
 
 # Default parameters
 DEFAULT_MAX_RESULTS = 200  # Default maximum number of results
@@ -92,10 +98,7 @@ def get_full_url_from_cache(detail_id: str, cache_file: str = None) -> str | Non
         the full URL, or None if not found
     """
     if cache_file is None:
-        # Default cache path
-        cache_file = os.path.join(
-            os.path.dirname(os.path.dirname(__file__)), "dataset_ja/ritsumei_pd_cache.json"
-        )
+        cache_file = DEFAULT_CACHE_FILE
 
     if not os.path.exists(cache_file):
         return None
@@ -1054,8 +1057,7 @@ def main():
     print("Ritsumeikan person database — query client test")
     print("=" * 70)
 
-    workspace_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-    cache_file = os.path.join(workspace_root, "dataset_ja/ritsumei_pd_cache.json")
+    cache_file = DEFAULT_CACHE_FILE
 
     client = RitsumeiClient(cache_file)
     print(f"\n💾 cache file: {cache_file}")

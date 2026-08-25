@@ -208,17 +208,9 @@ def main_selfcon():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)
@@ -491,17 +483,9 @@ def main_cove():
     )
     args = ap.parse_args()
 
-    from openai import OpenAI
+    from llm_client import make_client
 
-    client_kwargs = {}
-    if args.base_url:
-        client_kwargs["base_url"] = args.base_url
-    if args.api_key:
-        client_kwargs["api_key"] = args.api_key
-    client = OpenAI(**client_kwargs)
-    from llm_cache import wrap_client  # transparent disk cache
-
-    client = wrap_client(client)
+    client = make_client(base_url=args.base_url, api_key=args.api_key)
 
     ents = [json.loads(l) for l in open(args.entities)]
     db = EntityDB(ents)
